@@ -1,0 +1,346 @@
+# Preamble.cow
+
+# MEMORY LAYOUT:
+# every cell is 1 byte
+# &0...&9 each 1 cell
+# %0...%9 each 1 cell
+# &n are internal registers (mostly for @ functions)
+# %n are like %edx, ... in asm
+# &n are always assumed to be empty (if possible)
+# after that
+# memory | stack | stack state | is 0x00 | tmp
+# memory counts from 0x000 to 0xFFF
+# stack state being either 0 for free or 1 for not free
+# pointer is always at 0x0
+# default types:
+# Code: {} code block
+# Address: 0x...
+# @AnyAddress: 0y... (addressing cell index, starts counting at 0y0000 to 0yFFFF, includes the registers in counting)
+# Register: &n or %n
+# 0x0 = 0y20
+
+_unsafe; # enable _ features
+_internal; # enable @ features, requires _unsafe
+
+def [callonce]@setupMemory {
+    # Move to 0x00
+    _bf !{ >>>>>>>>>> >>>>>>>>>> };
+    # Set is 0x00 to 1 on 0x3
+    _bf !{ >>>+<<< }; # could do this with macros
+}
+
+@setupMemory;
+
+# _bf(BFCode): Add BFCode to the outputing code at that place
+# _sub(Code): Substitute code block at that place
+# _translateRegister(Register): Translates Register to AnyAddress
+# _translateAddress(Address): Translates Address to AnyAddress
+# _ptrelt(@AnyAddress): Move pointer to $0, assuming that it is currently at 0x0
+# _ptrelb(@AnyAddress): Move pointer to 0x0, assuming that it is currently at $0
+
+#### INTERNAL FEATURES
+
+# Move one any address to the left
+def @ptrleft {
+    _bf !{ < };
+}
+
+# Move one any address to the right
+def @ptrright {
+    _bf !{ > };
+}
+
+def @ptrinc {
+    _bf !{ + };
+}
+
+def @ptrdec {
+    _bf !{ - };
+}
+
+def @clearptr {
+    @whileptrnz {
+        @ptrdec;
+    };
+}
+
+# Move one address to the left
+# TODO: make dependent on N_MEMORY_SPACING
+def @memleft {
+    @ptrleft;
+    @ptrleft;
+    @ptrleft;
+    @ptrleft;
+    @ptrleft;
+}
+
+# Move one address to the right
+# TODO: make dependent on N_MEMORY_SPACING
+def @memright {
+    @ptrright;
+    @ptrright;
+    @ptrright;
+    @ptrright;
+    @ptrright;
+}
+
+def @clearmytmp {
+    @tmpjmpmytmp {
+        @whileptrnz {
+            @ptrdec;
+        };
+    };
+}
+
+## Control flow
+
+def @whileptrnz(Code) {
+    _bf !{ [ };
+    _sub $0;
+    _bf !{ ] };
+}
+
+def @whileptrez(Code) {
+    @clearmytmp;
+
+    @ifptrez {
+        @tmpjmpmytmp {
+            @ptrinc;
+
+            @whileptrnz {
+                @ptrright;
+                @memleft;
+
+                _sub $0;
+
+                @ifptrnz {
+                    @tmpjmpmytmp {
+                        @ptrdec;
+                    };
+                };
+
+                @memright;
+                @ptrleft;
+            };
+        };
+    };
+}
+
+# Taken from http://calmerthanyouare.org/2016/01/14/control-flow-in-brainfuck.html
+# TODO: Make this less spaghetti
+def @ifptrnz(Code) {
+    # Start at mem cell
+
+    # Clear tmp cell
+    @clearmytmp;
+
+    @whileptrnz {
+        _sub $0;
+
+        @whileptrnz {
+            @ptrdec;
+
+            @tmpjmpmytmp {
+                @ptrinc;
+            };
+        };
+    };
+
+    # Can maybe change this loop?
+
+    @tmpjmpmytmp {
+        @whileptrnz {
+            @ptrdec;
+
+            @ptrright;
+            @memleft;
+
+            @ptrinc;
+
+            @ptrleft;
+            @memright;
+        };
+    };
+}
+
+# If pointer equal zero
+# Assumes we're at a memory cell
+def @ifptrez(Code) {
+    @clearmytmp;
+
+    @tmpjmpmytmp {
+        @ptrinc;
+    };
+
+    @ifptrnz {
+        @tmpjmpmytmp {
+            @ptrdec;
+        };
+    };
+
+    @tmpjmpmytmp {
+        @ifptrnz {
+            # Move to memory cell
+            @ptrright;
+            @memleft;
+
+            _sub $0;
+
+            @memright;
+            @ptrleft;
+        };
+    };
+
+    # Should not be necessary but let's do it anyway just in case...
+    @clearmytmp;
+}
+
+## End
+
+def @tmpjmpmytmp(Code) {
+    @ptrleft;
+    @memright;
+
+    _sub $0;
+
+    @ptrright;
+    @memleft;
+}
+
+def @tmpjmp(@AnyAddress, Code) {
+    # Assume pointer is at 0x0
+    _ptrelt $0;
+    _sub $1;
+    _ptrelb $0;
+}
+
+def @inc(@AnyAddress) {
+    # Assume pointer is at 0x0
+    @tmpjmp $0 {
+        @ptrinc;
+    };
+}
+
+def @dec(@AnyAddress) {
+    # Assume pointer is at 0x0
+    @tmpjmp $0 {
+        @ptrdec;
+    };
+}
+
+def @clear(@AnyAddress) {
+    @tmpjmp $0 {
+        @clearptr;
+    };
+}
+
+# Copy what is in $0 to $1. Clearing what was previously in $1. Uses &9 as tmp. Assumes pointer is located at 0x0
+def @ptrcopy(@AnyAddress, @AnyAddress) {
+    # Make sure &9 is empty
+    @clear _translateRegister(&9);
+    @clear $1;
+
+    @tmpjmp $0 {
+        @whileptrnz {
+            @ptrdec;
+
+            @tmpjmp _translateRegister(&9) {
+                @ptrinc;
+            };
+
+            @tmpjmp $1 {
+                @ptrinc;
+            };
+        };
+    };
+
+    # Recover previous value
+    @tmpjmp _translateRegister(&9) {
+        @whileptrnz {
+            @ptrdec;
+
+            @tmpjmp $0 {
+                @ptrinc;
+            };
+        };
+    };
+
+    # &9 should be empty now
+}
+
+# Jumps onto the memory frame of the next stack position
+def @jmpNextStackPos(Code) {
+    # Start at 0x0
+    @ptrright;
+    @ptrright;
+
+    # Now at 0x2 at stack state
+    @whileptrez {
+        @memright;
+    };
+
+    @ptrleft;
+    @ptrleft;
+
+    _sub $0;
+
+    @memright;
+    @ptrleft;
+    @ptrleft;
+
+    @whileptrez { # Change to goto0?
+        @memleft;
+    };
+
+    # at 0x3
+
+    @ptrleft;
+    @ptrleft;
+    @ptrleft;
+}
+
+#### END
+
+def inc(Register) {
+    @inc _translateRegister($0);
+}
+
+def inc(Address) {
+    @inc _translateAddress($0);
+}
+
+def dec(Register) {
+    @dec _translateRegister($0);
+}
+
+def dec(Address) {
+    @dec _translateAddress($0);
+}
+
+# Move what is in $0 into $1. Clears $1
+def mov(Address, Address) {
+    @ptrcopy _translateAddress($0) _translateAddress($1);
+}
+
+# Move what is in $0 into $1. Clears $1
+def mov(Register, Register) {
+    @ptrcopy _translateRegister($0) _translateRegister($1);
+}
+
+# Move what is in $0 into $1. Clears $1
+def mov(Address, Register) {
+    @ptrcopy _translateAddress($0) _translateRegister($1);
+}
+
+def mov(Register, Address) {
+    @ptrcopy _translateRegister($0) _translateAddress($1);
+}
+
+# memory | stack | stack state | is 0x00 | tmp
+
+# Push what is in $0 onto the stack
+def push(Address) {
+    @jmpNextStackPos {
+
+    };
+}
