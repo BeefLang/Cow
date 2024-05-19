@@ -79,7 +79,7 @@ public class Application {
         System.out.println(bf);
 
         try {
-            Files.write(path, bf.lines().toList());
+            Files.write(output, bf.lines().toList());
         } catch (IOException e) {
             System.err.println("Error: Could not write to output file");
 
