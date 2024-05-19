@@ -8,6 +8,6 @@ import java.util.Set;
 public class UnsafeEnableInternal implements CompileTimeUnsafe {
     @Override
     public Set<ASTLevel> permittedLevels() {
-        return Set.of(ASTLevel.MACRO);
+        return Set.of(ASTLevel.FILE);
     }
 }
