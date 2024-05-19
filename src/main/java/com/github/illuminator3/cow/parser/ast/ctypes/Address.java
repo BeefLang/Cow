@@ -6,8 +6,6 @@ import com.github.illuminator3.cow.parser.ast.CArgument;
 import com.github.illuminator3.cow.parser.ast.Translatable;
 import com.github.illuminator3.cow.parser.ast.TypeOfAddress;
 
-import java.util.List;
-
 public record Address(int position) implements Translatable<AnyAddress>, CArgument, TypeOfAddress {
     @Override
     public AnyAddress translate() {

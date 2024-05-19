@@ -11,10 +11,10 @@ import com.github.illuminator3.cow.parser.ast.ctypes.AnyAddress;
 public record UnsafePtrelt(TypeOfAnyAddress address) implements RuntimeUnsafe {
     @Override
     public void compile(AST ast, BFBuilder builder, ArgumentChain arguments) {
-        System.out.println("address: " + address);
+        Application.debug("address: " + address);
         AnyAddress tmp = address.translateToAnyAddress(arguments);
-        System.out.println("translated any address: " + tmp);
-        System.out.println("tmp position: " + tmp.position() + " app zero pos: " + Application.ZERO_POSITION);
+        Application.debug("translated any address: " + tmp);
+        Application.debug("tmp position: " + tmp.position() + " app zero pos: " + Application.ZERO_POSITION);
 
         int pos = tmp.position();
 

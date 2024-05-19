@@ -1,5 +1,6 @@
 package com.github.illuminator3.cow.parser;
 
+import com.github.illuminator3.cow.app.Application;
 import com.github.illuminator3.cow.compiler.BFBuilder;
 import com.github.illuminator3.cow.parser.ast.*;
 import com.github.illuminator3.cow.parser.ast.command.CallMacro;
@@ -71,11 +72,39 @@ public class Parser {
     }
 
     private AST verify(AST ast) {
-        // _ only if _unsafe was called
-        // @ only if _internal was called, same applies to macro parameters (@AnyAddress)
-        // _unsafe and _internal only in file, nowhere else
-        // check unsafe call arg types
-        // check ast levels
+        // _ only if _unsafe was called TODO
+        // @ only if _internal was called, same applies to macro parameters (@AnyAddress) TODO
+        // _unsafe and _internal only in file, nowhere else DONE
+        // check ast levels DONE
+
+        for (Command cmd : ast.file().commands()) {
+            if (!cmd.permittedLevels().contains(ASTLevel.FILE)) {
+                throw new IllegalStateException("Use of command outside of accepted scope: " + cmd);
+            }
+        }
+
+        List<Command> foundCommands = new ArrayList<>();
+        Queue<Macro> macros = new LinkedList<>();
+
+        macros.addAll(ast.macros());
+
+        while (!macros.isEmpty()) {
+            Macro next = macros.remove();
+
+            for (Command cmd : next.commands()) {
+                foundCommands.add(cmd);
+
+                if (cmd instanceof CallMacro cm) {
+                    macros.add(cm.macro());
+                }
+            }
+        }
+
+        for (Command cmd : foundCommands) {
+            if (!cmd.permittedLevels().contains(ASTLevel.MACRO)) {
+                throw new IllegalStateException("Use of command outside of accepted scope: " + cmd);
+            }
+        }
 
         return ast;
     }
@@ -215,9 +244,10 @@ public class Parser {
         Optional<Macro> first = macros.stream().filter(macro -> macro.name().equals(macroName)).filter(macro -> macro.parameters().equals(argumentTypes)).findFirst();
 
         if (first.isEmpty()) {
-            System.out.println(macroName);
-            System.out.println(argumentTypes);
-            nameToken.error("Macro not found", "Args: " + argumentTypes.stream().map(CType::getName).collect(Collectors.joining(", ")));
+            Application.debug(macroName);
+            Application.debug(argumentTypes);
+            String args = argumentTypes.stream().map(CType::getName).collect(Collectors.joining(", "));
+            nameToken.error("Macro not found", "Args: " + (args.isEmpty() ? "none" : args));
         }
 
         return new CallMacro(first.get(), arguments);
@@ -282,17 +312,17 @@ public class Parser {
     }
 
     private AnyAddress parseAnyAddress() {
-        System.out.println("Parsing any address: " + peek().content());
-        System.out.println("Value:" + Integer.parseInt(peek().content().substring(2), 16));
+        Application.debug("Parsing any address: " + peek().content());
+        Application.debug("Value:" + Integer.parseInt(peek().content().substring(2), 16));
         return new AnyAddress(Integer.parseInt(removeAndExpect(TokenType.ANY_ADDRESS).content().substring(2), 16));
     }
 
-    private FunctionRegister_ parseFunctionRegister() {
-        return new FunctionRegister_(Integer.parseInt(removeAndExpect(TokenType.REGISTER).content().substring(1)));
+    private CFunctionRegister parseFunctionRegister() {
+        return new CFunctionRegister(Integer.parseInt(removeAndExpect(TokenType.REGISTER).content().substring(1)));
     }
 
-    private InternalRegister_ parseInternalRegister() {
-        return new InternalRegister_(Integer.parseInt(removeAndExpect(TokenType.INTERNAL_REGISTER).content().substring(1)));
+    private CInternalRegister parseInternalRegister() {
+        return new CInternalRegister(Integer.parseInt(removeAndExpect(TokenType.INTERNAL_REGISTER).content().substring(1)));
     }
 
     private Argument parseArgumentRegister(CType[] possibleArgTypes) {

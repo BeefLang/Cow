@@ -5,8 +5,6 @@ import com.github.illuminator3.cow.parser.ast.CArgument;
 import com.github.illuminator3.cow.parser.ast.Translatable;
 import com.github.illuminator3.cow.parser.ast.TypeOfRegister;
 
-import java.util.List;
-
 public interface Register extends Translatable<AnyAddress>, CArgument, TypeOfRegister {
     int position();
 

@@ -1,7 +1,5 @@
 package com.github.illuminator3.cow.tokenizer;
 
-import com.github.illuminator3.cow.parser.ParseException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

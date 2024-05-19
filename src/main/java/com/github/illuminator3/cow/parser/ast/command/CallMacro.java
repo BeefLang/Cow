@@ -1,5 +1,6 @@
 package com.github.illuminator3.cow.parser.ast.command;
 
+import com.github.illuminator3.cow.app.Application;
 import com.github.illuminator3.cow.compiler.BFBuilder;
 import com.github.illuminator3.cow.parser.ast.AST;
 import com.github.illuminator3.cow.parser.ast.ArgumentChain;
@@ -11,7 +12,7 @@ import java.util.List;
 public record CallMacro(Macro macro, List<CArgument> arguments) implements Command {
     @Override
     public void compile(AST ast, BFBuilder builder, ArgumentChain args) {
-        System.out.println("in call macro: " + macro.name());
+        Application.debug("in call macro: " + macro.name());
         macro.compile(ast, builder, args.addLevel(arguments));
     }
 

@@ -1,5 +1,6 @@
 package com.github.illuminator3.cow.parser.ast;
 
+import com.github.illuminator3.cow.app.Application;
 import com.github.illuminator3.cow.parser.ast.ctypes.Argument;
 
 import java.util.ArrayList;
@@ -32,15 +33,15 @@ public class ArgumentChain {
     public CArgument resolve(int position) {
         CArgument next = levels.get(levels.size() - 1).get(position);
 
-        System.out.println("Resolving position: " + position);
-        System.out.println("Current chain: " + levels);
+        Application.debug("Resolving position: " + position);
+        Application.debug("Current chain: " + levels);
 
         for (int i = 1;; i++) {
-            System.out.println("i = " + i);
-            System.out.println("Previous: " + next);
+            Application.debug("i = " + i);
+            Application.debug("Previous: " + next);
             if (next instanceof Argument arg) {
                 next = arg.resolve(levels.get(levels.size() - 1 - i));
-                System.out.println("Next: " + next);
+                Application.debug("Next: " + next);
             } else {
                 break;
             }

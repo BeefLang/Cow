@@ -6,8 +6,6 @@ import com.github.illuminator3.cow.parser.ast.command.unsafe.RuntimeUnsafe;
 import com.github.illuminator3.cow.parser.ast.ctypes.AnyAddress;
 import com.github.illuminator3.cow.parser.ast.ctypes.CType;
 
-import java.util.List;
-
 public record UnsafeTranslateRegister(TypeOfRegister register) implements RuntimeUnsafe, CArgument, TypeOfAnyAddress {
     @Override
     public void compile(AST ast, BFBuilder builder, ArgumentChain args) {

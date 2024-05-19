@@ -1,5 +1,6 @@
 package com.github.illuminator3.cow.parser.ast;
 
+import com.github.illuminator3.cow.app.Application;
 import com.github.illuminator3.cow.compiler.BFBuilder;
 import com.github.illuminator3.cow.compiler.Compilable;
 import com.github.illuminator3.cow.parser.ast.command.Command;
@@ -23,12 +24,12 @@ public final class Macro implements Compilable<ArgumentChain> {
 
     @Override
     public void compile(AST ast, BFBuilder builder, ArgumentChain arguments) {
-        System.out.println("in macro: " + name);
-        System.out.println(arguments);
+        Application.debug("in macro: " + name);
+        Application.debug(arguments);
         for (Command command : commands) {
-            System.out.println("compiling command: " + command);
+            Application.debug("compiling command: " + command);
             command.compile(ast, builder, arguments);
-            System.out.println("done compiling command");
+            Application.debug("done compiling command");
         }
     }
 
