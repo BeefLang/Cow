@@ -84,14 +84,6 @@ def @memright {
     @ptrright;
 }
 
-def @clearmytmp {
-    @tmpjmpmytmp {
-        @whileptrnz {
-            @ptrdec;
-        };
-    };
-}
-
 ## Control flow
 
 def @whileptrnz(Code) {
@@ -101,20 +93,22 @@ def @whileptrnz(Code) {
 }
 
 def @whileptrez(Code) {
-    @clearmytmp;
+    @whileptrez 0x0 $0;
+}
 
-    @ifptrez {
-        @tmpjmpmytmp {
+def @whileptrez(Address, Code) {
+    @ifptrez 0x1 {
+        @jmptmp $0 {
             @ptrinc;
 
-            @whileptrnz {
+            @jmptmp $0 {
                 @ptrright;
                 @memleft;
 
-                _sub $0;
+                _sub $1;
 
-                @ifptrnz {
-                    @tmpjmpmytmp {
+                @ifptrnz 0x3 {
+                    @jmptmp $0 {
                         @ptrdec;
                     };
                 };
@@ -126,21 +120,21 @@ def @whileptrez(Code) {
     };
 }
 
+def ifptrnz(Code) { @ifptrnz 0x0 $0; }
+
 # Taken from http://calmerthanyouare.org/2016/01/14/control-flow-in-brainfuck.html
 # TODO: Make this less spaghetti
-def @ifptrnz(Code) {
+# $0 which tmp cell to use
+def @ifptrnz(Address, Code) {
     # Start at mem cell
 
-    # Clear tmp cell
-    @clearmytmp;
-
     @whileptrnz {
-        _sub $0;
+        _sub $1;
 
         @whileptrnz {
             @ptrdec;
 
-            @tmpjmpmytmp {
+            @jmptmp $0 {
                 @ptrinc;
             };
         };
@@ -148,7 +142,7 @@ def @ifptrnz(Code) {
 
     # Can maybe change this loop?
 
-    @tmpjmpmytmp {
+    @jmptmp $0 {
         @whileptrnz {
             @ptrdec;
 
@@ -163,45 +157,50 @@ def @ifptrnz(Code) {
     };
 }
 
+def @ifptrez(Code) {
+    @ifptrez 0x0 $0;
+}
+
 # If pointer equal zero
 # Assumes we're at a memory cell
-def @ifptrez(Code) {
-    @clearmytmp;
-
-    @tmpjmpmytmp {
+# $0 which tmp cell to use
+def @ifptrez(Address, Code) {
+    @jmptmp $0 {
         @ptrinc;
     };
 
-    @ifptrnz {
-        @tmpjmpmytmp {
+    @ifptrnz 0x1 {
+        @jmptmp $0 {
             @ptrdec;
         };
     };
 
-    @tmpjmpmytmp {
-        @ifptrnz {
+    @jmptmp $0 {
+        @ifptrnz 0x1 {
             # Move to memory cell
             @ptrright;
             @memleft;
 
-            _sub $0;
+            _sub $1;
 
             @memright;
             @ptrleft;
         };
     };
-
-    # Should not be necessary but let's do it anyway just in case...
-    @clearmytmp;
 }
 
 ## End
 
-def @tmpjmpmytmp(Code) {
+def @jmpmytmp(Code) {
+    @jmptmp 0x0 $0;
+}
+
+# Address = relative to current cell
+def @jmptmp(Address, Code) {
     @ptrleft;
     @memright;
 
-    _sub $0;
+    @tmpjmp _translateAddress($0) { _sub $1; };
 
     @ptrright;
     @memleft;
@@ -284,15 +283,19 @@ def @jmpNextStackPos(Code) {
 
     _sub $0;
 
+    @goto0;
+}
+
+def @goto0 {
     @memright;
     @ptrleft;
     @ptrleft;
 
-    @whileptrez { # Change to goto0?
+    @whileptrez {
         @memleft;
     };
 
-    # at 0x3
+    # at 0y3
 
     @ptrleft;
     @ptrleft;
@@ -338,9 +341,28 @@ def mov(Register, Address) {
 
 # memory | stack | stack state | is 0x00 | tmp
 
+def @push(@AnyAddress) {
+    # TODO
+}
+
 # Push what is in $0 onto the stack
 def push(Address) {
-    @jmpNextStackPos {
+    @push _translateAddress($0);
+}
 
-    };
+def push(Register) {
+    @push _translateRegister($0);
+}
+
+# Pop head of stack into $0
+def @pop(@AnyAddress) {
+    # TODO
+}
+
+def pop(Address) {
+    @pop _translateAddress($0);
+}
+
+def pop(Register) {
+    @pop _translateRegister($0);
 }
