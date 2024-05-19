@@ -12,7 +12,7 @@ public class BFBuilder implements CArgument {
         return empty().addCode(code);
     }
 
-    private StringBuilder code = new StringBuilder();
+    private final StringBuilder code = new StringBuilder();
 
     public BFBuilder addCode(String code) {
         if (!code.matches("^[+-<>\\[\\]]*$")) {

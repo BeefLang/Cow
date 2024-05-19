@@ -19,8 +19,6 @@ public final class Token {
         this.type = type;
     }
 
-    private boolean actionFulfilled = false;
-
     public static List<Token> dummy(TokenType... types) {
         return Arrays.stream(types).map(Token::dummy).toList();
     }
@@ -67,8 +65,7 @@ public final class Token {
     }
 
     public <T> T unexpected(String info) {
-        if (!actionFulfilled)
-            error("Unexpected token: " + type, info);
+        error("Unexpected token: " + type, info);
 
         return null;
     }
