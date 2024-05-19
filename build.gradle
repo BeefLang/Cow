@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group = 'com.github.beeflang'
@@ -18,4 +20,16 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+application {
+    mainClass = 'com.github.beeflang.cow.app.Application'
+}
+
+jar {
+    manifest {
+        attributes(
+            'Main-Class': application.mainClass
+        )
+    }
 }

@@ -12,13 +12,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
 
 public class Application {
-    public static int N_INTERNAL_REGISTERS = 10, N_FUNCTION_REGISTERS = 10, MEMORY_SPACING = 5, ZERO_POSITION = new Address(0).translate().position();
-
     public static boolean ENABLE_DEBUG = false;
+    public static int N_INTERNAL_REGISTERS = 10, N_FUNCTION_REGISTERS = 10, MEMORY_SPACING = 5, ZERO_POSITION = new Address(0).translate().position();
 
     public static void main(String[] args) {
         ArgumentParser argumentParser = new ArgumentParser(args);
@@ -43,7 +43,7 @@ public class Application {
 
         List<Line> lines = null;
 
-        try (InputStream resource = Application.class.getResourceAsStream("preamble.cow");
+        try (InputStream resource = Application.class.getResourceAsStream("/preamble.cow");
              InputStreamReader inputStreamReader = new InputStreamReader(resource, StandardCharsets.UTF_8);
              BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
             lines = lexer.readLines(bufferedReader.lines().toList(), "preamble.cow");
@@ -51,8 +51,18 @@ public class Application {
             Application.debug("Lexing input file " + path);
 
             lines.addAll(lexer.readLines(Files.readAllLines(path), path.getFileName().toString()));
+        } catch (NoSuchFileException e) {
+            System.err.println("Error: Could not find file");
+
+            System.exit(-1);
+        } catch (NullPointerException e) {
+            System.err.println("Internal error");
+
+            e.printStackTrace();
+
+            System.exit(-1);
         } catch (IOException e) {
-            System.err.println("Could not find file");
+            e.printStackTrace();
 
             System.exit(-1);
         }
