@@ -6,7 +6,7 @@
 
 <h2 align="center">Cow</h3>
   <p align="center">
-    An ASM-like language that compiles to BrainFuck.
+    An ASM-like language that compiles to BrainFuck
     <br>
     ·
     <a href="https://github.com/BeefLang/Cow/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
