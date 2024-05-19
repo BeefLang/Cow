@@ -1,14 +1,16 @@
 package com.github.beeflang.cow.app;
 
 import com.github.beeflang.cow.compiler.Compiler;
-import com.github.beeflang.cow.parser.Parser;
-import com.github.beeflang.cow.parser.ast.AST;
 import com.github.beeflang.cow.parser.ast.ctypes.Address;
 import com.github.beeflang.cow.tokenizer.Lexer;
 import com.github.beeflang.cow.tokenizer.Line;
-import com.github.beeflang.cow.tokenizer.Token;
+import com.github.beeflang.dairy.*;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -18,32 +20,45 @@ public class Application {
 
     public static boolean ENABLE_DEBUG = false;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
+        ArgumentParser argumentParser = new ArgumentParser(args);
+        ParsedArguments arg = argumentParser.parse(
+                ParseOptions.builder()
+                        .argument(Argument.builder().name("verbose").optional(true).dataType(DataType.BOOLEAN).defaultValue("false").build())
+                        .argument(Argument.builder().name("file").optional(false).dataType(DataType.FILE).build())
+                        .argument(Argument.builder().name("internalRegisters").optional(true).dataType(DataType.INT).defaultValue("10").build())
+                        .argument(Argument.builder().name("functionRegisters").optional(true).dataType(DataType.INT).defaultValue("10").build())
+                        .build());
+
+        ENABLE_DEBUG = arg.getContentInType("verbose");
+
+        Path path = arg.getContentInType("file");
+
+        System.out.println("Input file: " + path.getFileName().toString());
+        System.out.println("Verbose: " + ENABLE_DEBUG);
+
         Lexer lexer = new Lexer();
 
         Application.debug("Lexing preamble");
 
-        List<Line> lines = lexer.readLines(Files.readAllLines(Path.of("src/main/resources/preamble.cow")), "preamble.cow");
+        List<Line> lines = null;
 
-        Application.debug("Lexing input file");
+        try (InputStream resource = Application.class.getResourceAsStream("preamble.cow");
+             InputStreamReader inputStreamReader = new InputStreamReader(resource, StandardCharsets.UTF_8);
+             BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
+            lines = lexer.readLines(bufferedReader.lines().toList(), "preamble.cow");
 
-        lines.addAll(lexer.readLines(Files.readAllLines(Path.of("src/main/resources/test.cow")), "test.cow"));
+            Application.debug("Lexing input file " + path);
 
-        Application.debug("Tokenization");
+            lines.addAll(lexer.readLines(Files.readAllLines(path), path.getFileName().toString()));
+        } catch (IOException e) {
+            System.err.println("Could not find file");
 
-        List<Token> tokenize = lexer.tokenize(lines);
+            System.exit(-1);
+        }
 
-        Application.debug("Parsing");
-
-        Parser parser = new Parser(tokenize);
-
-        AST ast = parser.parse();
-
-        Application.debug(ast);
-
-        Application.debug("Compiling");
-
-        Application.debug(new Compiler().compile(ast));
+        System.out.println("Compiling...");
+        System.out.println("Output:\n" + Compiler.fullCompile(lexer, lines));
     }
 
     public static void debug(Object x, Object... args) {

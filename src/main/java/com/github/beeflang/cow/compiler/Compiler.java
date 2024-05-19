@@ -1,16 +1,39 @@
 package com.github.beeflang.cow.compiler;
 
+import com.github.beeflang.cow.app.Application;
+import com.github.beeflang.cow.parser.Parser;
 import com.github.beeflang.cow.parser.ast.AST;
+import com.github.beeflang.cow.tokenizer.Lexer;
+import com.github.beeflang.cow.tokenizer.Line;
+import com.github.beeflang.cow.tokenizer.Token;
 
 import java.util.List;
 
 public class Compiler {
-    public String compile(AST ast) {
+    public static BFBuilder fullCompile(Lexer lexer, List<Line> lines) {
+        Application.debug("Tokenization");
+
+        List<Token> tokenize = lexer.tokenize(lines);
+
+        Application.debug("Parsing");
+
+        Parser parser = new Parser(tokenize);
+
+        AST ast = parser.parse();
+
+        Application.debug(ast);
+
+        Application.debug("Compiling");
+
+        return new Compiler().compile(ast);
+    }
+
+    public BFBuilder compile(AST ast) {
         BFBuilder bf = new BFBuilder();
 
         ast.compile(ast, bf, null);
 
-        return optimize(bf.toString());
+        return BFBuilder.code(optimize(bf.toString()));
     }
 
     private String optimize(String s) {
