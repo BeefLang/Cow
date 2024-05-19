@@ -25,16 +25,19 @@ public class Application {
         ParsedArguments arg = argumentParser.parse(
                 ParseOptions.builder()
                         .argument(Argument.builder().name("verbose").optional(true).dataType(DataType.BOOLEAN).defaultValue("false").build())
-                        .argument(Argument.builder().name("file").optional(false).dataType(DataType.FILE).build())
+                        .argument(Argument.builder().name("input").optional(false).dataType(DataType.FILE).build())
+                        .argument(Argument.builder().name("output").optional(true).dataType(DataType.FILE).defaultValue("output.bf").build())
                         .argument(Argument.builder().name("internalRegisters").optional(true).dataType(DataType.INT).defaultValue("10").build())
                         .argument(Argument.builder().name("functionRegisters").optional(true).dataType(DataType.INT).defaultValue("10").build())
                         .build());
 
         ENABLE_DEBUG = arg.getContentInType("verbose");
 
-        Path path = arg.getContentInType("file");
+        Path path = arg.getContentInType("input");
+        Path output = arg.getContentInType("output");
 
         System.out.println("Input file: " + path.getFileName().toString());
+        System.out.println("Output file: " + output.getFileName().toString());
         System.out.println("Verbose: " + ENABLE_DEBUG);
 
         Lexer lexer = new Lexer();
@@ -54,9 +57,11 @@ public class Application {
         } catch (NoSuchFileException e) {
             System.err.println("Error: Could not find file");
 
+            e.printStackTrace();
+
             System.exit(-1);
         } catch (NullPointerException e) {
-            System.err.println("Internal error");
+            System.err.println("Error: Internal error");
 
             e.printStackTrace();
 
@@ -68,7 +73,20 @@ public class Application {
         }
 
         System.out.println("Compiling...");
-        System.out.println("Output:\n" + Compiler.fullCompile(lexer, lines));
+
+        String bf = Compiler.fullCompile(lexer, lines).toString();
+
+        System.out.println(bf);
+
+        try {
+            Files.write(path, bf.lines().toList());
+        } catch (IOException e) {
+            System.err.println("Error: Could not write to output file");
+
+            e.printStackTrace();
+
+            System.exit(-1);
+        }
     }
 
     public static void debug(Object x, Object... args) {
