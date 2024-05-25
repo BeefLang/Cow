@@ -218,7 +218,7 @@ public class Parser {
         while (peek().type() != TokenType.CLOSE_BRACES) {
             Token next = remove();
 
-            builder.addCode(next.checkType("Expected +, -, [, ], <, or >; got " + next.type(), TokenType.BF_PLUS, TokenType.BF_MINUS, TokenType.OPEN_BRACKETS, TokenType.CLOSE_BRACKETS, TokenType.BF_LEFT, TokenType.BF_RIGHT).content());
+            builder.addCode(next.checkType("Expected +, -, [, ], <, >, ., or ,; got " + next.type(), TokenType.BF_PLUS, TokenType.BF_MINUS, TokenType.OPEN_BRACKETS, TokenType.CLOSE_BRACKETS, TokenType.BF_LEFT, TokenType.BF_RIGHT, TokenType.BF_READ, TokenType.BF_PRINT).content());
         }
 
         removeAndExpect(TokenType.CLOSE_BRACES);
