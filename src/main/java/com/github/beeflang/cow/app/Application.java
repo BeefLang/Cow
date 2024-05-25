@@ -91,7 +91,7 @@ public class Application {
 
     public static void debug(Object x, Object... args) {
         if (ENABLE_DEBUG) {
-            Application.debug(x.toString().formatted(args));
+            System.out.println(x.toString().formatted(args));
         }
     }
 }
